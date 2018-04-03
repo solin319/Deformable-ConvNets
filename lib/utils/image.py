@@ -5,6 +5,7 @@ import random
 from PIL import Image
 from bbox.bbox_transform import clip_boxes
 
+import moxing.mxnet as mox
 
 # TODO: This two functions should be merged with individual data loader
 def get_image(roidb, config):
@@ -22,8 +23,13 @@ def get_image(roidb, config):
     processed_roidb = []
     for i in range(num_images):
         roi_rec = roidb[i]
-        assert os.path.exists(roi_rec['image']), '%s does not exist'.format(roi_rec['image'])
-        im = cv2.imread(roi_rec['image'], cv2.IMREAD_COLOR|cv2.IMREAD_IGNORE_ORIENTATION)
+        # assert os.path.exists(roi_rec['image']), '%s does not exist'.format(roi_rec['image'])
+        # im = cv2.imread(roi_rec['image'], cv2.IMREAD_COLOR|cv2.IMREAD_IGNORE_ORIENTATION)
+        ## support obs
+        assert mox.file.exists(roi_rec['image']), '{} does not exist'.format(roi_rec['image'])
+        im = cv2.imdecode(np.frombuffer(mox.file.read(roi_rec['image']), dtype=np.uint8), \
+             cv2.IMREAD_COLOR|cv2.IMREAD_IGNORE_ORIENTATION)
+        ## support obs
         if roidb[i]['flipped']:
             im = im[:, ::-1, :]
         new_rec = roi_rec.copy()

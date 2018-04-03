@@ -23,6 +23,8 @@ from imdb import IMDB
 from pascal_voc_eval import voc_eval, voc_eval_sds
 from ds_utils import unique_boxes, filter_small_boxes
 
+import moxing.mxnet as mox
+
 class PascalVOC(IMDB):
     def __init__(self, image_set, root_path, devkit_path, result_path=None, mask_size=-1, binary_thresh=None):
         """
@@ -64,9 +66,13 @@ class PascalVOC(IMDB):
         :return:
         """
         image_set_index_file = os.path.join(self.data_path, 'ImageSets', 'Main', self.image_set + '.txt')
-        assert os.path.exists(image_set_index_file), 'Path does not exist: {}'.format(image_set_index_file)
-        with open(image_set_index_file) as f:
-            image_set_index = [x.strip() for x in f.readlines()]
+        # assert os.path.exists(image_set_index_file), 'Path does not exist: {}'.format(image_set_index_file)
+        # with open(image_set_index_file) as f:
+        #     image_set_index = [x.strip() for x in f.readlines()]
+        ## support obs
+        assert mox.file.exists(image_set_index_file), 'Path does not exist: {}'.format(image_set_index_file)
+        image_set_index = mox.file.read(image_set_index_file).split('\n')[0 : -1]
+        ## support obs
         return image_set_index
 
     def image_path_from_index(self, index):
@@ -76,7 +82,10 @@ class PascalVOC(IMDB):
         :return: full path of this image
         """
         image_file = os.path.join(self.data_path, 'JPEGImages', index + '.jpg')
-        assert os.path.exists(image_file), 'Path does not exist: {}'.format(image_file)
+        # assert os.path.exists(image_file), 'Path does not exist: {}'.format(image_file)
+        ## support obs
+        assert mox.file.exists(image_file), 'Path does not exist: {}'.format(image_file)
+        ## support obs
         return image_file
 
     def segmentation_path_from_index(self, index):
@@ -95,15 +104,26 @@ class PascalVOC(IMDB):
         :return: imdb[image_index]['boxes', 'gt_classes', 'gt_overlaps', 'flipped']
         """
         cache_file = os.path.join(self.cache_path, self.name + '_gt_roidb.pkl')
-        if os.path.exists(cache_file):
-            with open(cache_file, 'rb') as fid:
-                roidb = cPickle.load(fid)
+        # if os.path.exists(cache_file):
+        #     with open(cache_file, 'rb') as fid:
+        #         roidb = cPickle.load(fid)
+        #     print '{} gt roidb loaded from {}'.format(self.name, cache_file)
+        #     return roidb
+        ## support obs
+        if mox.file.exists(cache_file):
+            data_string = mox.file.read(cache_file)
+            roidb = cPickle.loads(data_string)
             print '{} gt roidb loaded from {}'.format(self.name, cache_file)
             return roidb
+        ## support obs
 
         gt_roidb = [self.load_pascal_annotation(index) for index in self.image_set_index]
-        with open(cache_file, 'wb') as fid:
-            cPickle.dump(gt_roidb, fid, cPickle.HIGHEST_PROTOCOL)
+        # with open(cache_file, 'wb') as fid:
+        #     cPickle.dump(gt_roidb, fid, cPickle.HIGHEST_PROTOCOL)
+        ## support obs
+        data_string = cPickle.dumps(gt_roidb, cPickle.HIGHEST_PROTOCOL)
+        mox.file.write(cache_file, data_string)
+        ## support obs
         print 'wrote gt roidb to {}'.format(cache_file)
 
         return gt_roidb
@@ -138,7 +158,13 @@ class PascalVOC(IMDB):
         roi_rec['image'] = self.image_path_from_index(index)
 
         filename = os.path.join(self.data_path, 'Annotations', index + '.xml')
-        tree = ET.parse(filename)
+        # tree = ET.parse(filename)
+        ## support obs
+        tree = ET.ElementTree()
+        parser = ET.XMLParser(target=ET.TreeBuilder())
+        parser.feed(mox.file.read(filename))
+        tree._root = parser.close()
+        ## support obs
         size = tree.find('size')
         roi_rec['height'] = float(size.find('height').text)
         roi_rec['width'] = float(size.find('width').text)
@@ -207,11 +233,18 @@ class PascalVOC(IMDB):
         :return: roidb of selective search
         """
         cache_file = os.path.join(self.cache_path, self.name + '_ss_roidb.pkl')
-        if os.path.exists(cache_file):
-            with open(cache_file, 'rb') as fid:
-                roidb = cPickle.load(fid)
+        # if os.path.exists(cache_file):
+        #     with open(cache_file, 'rb') as fid:
+        #         roidb = cPickle.load(fid)
+        #     print '{} ss roidb loaded from {}'.format(self.name, cache_file)
+        #     return roidb
+        ## support obs
+        if mox.file.exists(cache_file):
+            data_string = mox.file.read(cache_file)
+            roidb = cPickle.loads(data_string)
             print '{} ss roidb loaded from {}'.format(self.name, cache_file)
             return roidb
+        ## support obs
 
         if append_gt:
             print 'appending ground truth annotations'
@@ -219,8 +252,12 @@ class PascalVOC(IMDB):
             roidb = IMDB.merge_roidbs(gt_roidb, ss_roidb)
         else:
             roidb = self.load_selective_search_roidb(gt_roidb)
-        with open(cache_file, 'wb') as fid:
-            cPickle.dump(roidb, fid, cPickle.HIGHEST_PROTOCOL)
+        # with open(cache_file, 'wb') as fid:
+        #     cPickle.dump(roidb, fid, cPickle.HIGHEST_PROTOCOL)
+        ## support obs
+        data_string = cPickle.dumps(roidb, cPickle.HIGHEST_PROTOCOL)
+        mox.file.write(cache_file, data_string)
+        ## support obs
         print 'wrote ss roidb to {}'.format(cache_file)
 
         return roidb
@@ -251,14 +288,26 @@ class PascalVOC(IMDB):
         """
         # make all these folders for results
         result_dir = os.path.join(self.result_path, 'results')
-        if not os.path.exists(result_dir):
-            os.mkdir(result_dir)
+        # if not os.path.exists(result_dir):
+        #     os.mkdir(result_dir)
+        ## support obs
+        if not mox.file.exists(result_dir):
+            mox.file.make_dirs(result_dir)
+        ## support obs
         year_folder = os.path.join(self.result_path, 'results', 'VOC' + self.year)
-        if not os.path.exists(year_folder):
-            os.mkdir(year_folder)
+        # if not os.path.exists(year_folder):
+        #     os.mkdir(year_folder)
+        ## support obs
+        if not mox.file.exists(year_folder):
+            mox.file.make_dirs(year_folder)
+        ## support obs
         res_file_folder = os.path.join(self.result_path, 'results', 'VOC' + self.year, 'Main')
-        if not os.path.exists(res_file_folder):
-            os.mkdir(res_file_folder)
+        # if not os.path.exists(res_file_folder):
+        #     os.mkdir(res_file_folder)
+        ## support obs
+        if not mox.file.exists(res_file_folder):
+            mox.file.make_dirs(res_file_folder)
+        ## support obs
 
         self.write_pascal_results(detections)
         info = self.do_python_eval()
@@ -403,16 +452,29 @@ class PascalVOC(IMDB):
                 continue
             print 'Writing {} VOC results file'.format(cls)
             filename = self.get_result_file_template().format(cls)
-            with open(filename, 'wt') as f:
-                for im_ind, index in enumerate(self.image_set_index):
-                    dets = all_boxes[cls_ind][im_ind]
-                    if len(dets) == 0:
-                        continue
-                    # the VOCdevkit expects 1-based indices
-                    for k in range(dets.shape[0]):
-                        f.write('{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.
-                                format(index, dets[k, -1],
-                                       dets[k, 0] + 1, dets[k, 1] + 1, dets[k, 2] + 1, dets[k, 3] + 1))
+            # with open(filename, 'wt') as f:
+            #     for im_ind, index in enumerate(self.image_set_index):
+            #         dets = all_boxes[cls_ind][im_ind]
+            #         if len(dets) == 0:
+            #             continue
+            #         # the VOCdevkit expects 1-based indices
+            #         for k in range(dets.shape[0]):
+            #             f.write('{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.
+            #                     format(index, dets[k, -1],
+            #                            dets[k, 0] + 1, dets[k, 1] + 1, dets[k, 2] + 1, dets[k, 3] + 1))
+            ## support obs
+            write_buff = ""
+            for im_ind, index in enumerate(self.image_set_index):
+                dets = all_boxes[cls_ind][im_ind]
+                if len(dets) == 0:
+                    continue
+                # the VOCdevkit expects 1-based indices
+                for k in range(dets.shape[0]):
+                    write_buff += '{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.format(index, \
+                                  dets[k, -1], dets[k, 0] + 1, dets[k, 1] + 1, \
+                                  dets[k, 2] + 1, dets[k, 3] + 1)
+            mox.file.write(filename, write_buff)
+            ## support obs
 
     def do_python_eval(self):
         """

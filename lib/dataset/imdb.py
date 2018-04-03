@@ -16,6 +16,8 @@ from PIL import Image
 from bbox.bbox_transform import bbox_overlaps
 from multiprocessing import Pool, cpu_count
 
+import moxing.mxnet as mox
+
 def get_flipped_entry_outclass_wrapper(IMDB_instance, seg_rec):
     return IMDB_instance.get_flipped_entry(seg_rec)
 
@@ -60,8 +62,12 @@ class IMDB(object):
         :return: cache path
         """
         cache_path = os.path.join(self.root_path, 'cache')
-        if not os.path.exists(cache_path):
-            os.mkdir(cache_path)
+        # if not os.path.exists(cache_path):
+        #     os.mkdir(cache_path)
+        ## support obs
+        if not mox.file.exists(cache_path):
+            mox.file.make_dirs(cache_path)
+        ## support obs
         return cache_path
 
     @property

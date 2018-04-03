@@ -1,6 +1,6 @@
 ---
 MXNET_VERSION: "mxnet"
-output_path: "./output/rcnn/voc"
+output_path: "s3://obs-lpf/ckpt/rcnn/output/rcnn/voc"
 symbol: resnet_v1_101_rcnn
 gpus: '0,1,2,3'
 CLASS_AGNOSTIC: false
@@ -8,10 +8,10 @@ SCALES:
 - 600
 - 1000
 default:
-  frequent: 100
-  kvstore: device
+  frequent: 10
+  kvstore: local
 network:
-  pretrained: "./model/pretrained_model/resnet_v1_101"
+  pretrained: "s3://obs-lpf/ckpt/rcnn/resnet_v1_101"
   pretrained_epoch: 0
   PIXEL_MEANS:
   - 103.06
@@ -50,9 +50,9 @@ network:
 dataset:
   NUM_CLASSES: 21
   dataset: PascalVOC
-  dataset_path: "./data/VOCdevkit"
+  dataset_path: "s3://obs-lpf/data/VOCdevkit"
   image_set: 2007_trainval+2012_trainval
-  root_path: "./data"
+  root_path: "s3://obs-lpf/data"
   test_image_set: 2007_test
   proposal: rpn
 TRAIN:

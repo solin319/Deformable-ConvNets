@@ -26,6 +26,7 @@ from .DataParallelExecutorGroup import DataParallelExecutorGroup
 from mxnet import ndarray as nd
 from mxnet import optimizer as opt
 
+import moxing.mxnet as mox
 
 class Module(BaseModule):
     """Module is a basic module that wrap a `Symbol`. It is functionally the same
@@ -685,11 +686,19 @@ class Module(BaseModule):
         """
         assert self.optimizer_initialized
 
+        # if self._update_on_kvstore:
+        #     self._kvstore.save_optimizer_states(fname)
+        # else:
+        #     with open(fname, 'wb') as fout:
+        #         fout.write(self._updater.get_states())
+        ## surport obs
+        data_string = ''
         if self._update_on_kvstore:
-            self._kvstore.save_optimizer_states(fname)
+            data_string = self._kvstore._updater.get_states()
         else:
-            with open(fname, 'wb') as fout:
-                fout.write(self._updater.get_states())
+            data_string = self._updater.get_states()
+        mox.file.write(fname, data_string)
+        ## surport obs
 
     def load_optimizer_states(self, fname):
         """Load optimizer (updater) state from file
@@ -701,10 +710,17 @@ class Module(BaseModule):
         """
         assert self.optimizer_initialized
 
+        # if self._update_on_kvstore:
+        #     self._kvstore.load_optimizer_states(fname)
+        # else:
+        #     self._updater.set_states(open(fname, 'rb').read())
+        ## surport obs
+        data_string = mox.file.read(fname)
         if self._update_on_kvstore:
-            self._kvstore.load_optimizer_states(fname)
+            self._kvstore._updater.set_states(data_string)
         else:
-            self._updater.set_states(open(fname, 'rb').read())
+            self._updater.set_states(data_string)
+        ## surport obs
 
     def install_monitor(self, mon):
         """ Install monitor on all executors """

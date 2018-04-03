@@ -629,7 +629,7 @@ class resnet_v1_101_rcnn(Symbol):
         scale5a_branch2a = bn5a_branch2a
         res5a_branch2a_relu = mx.symbol.Activation(name='res5a_branch2a_relu', data=scale5a_branch2a, act_type='relu')
         res5a_branch2b = mx.symbol.Convolution(name='res5a_branch2b', data=res5a_branch2a_relu, num_filter=512, pad=(2, 2),
-                                               kernel=(3, 3), stride=(1, 1), dilate=(2, 2), no_bias=True)
+                                               kernel=(3, 3), stride=(1, 1), dilate=(2, 2), no_bias=True, cudnn_off=True)
         bn5a_branch2b = mx.symbol.BatchNorm(name='bn5a_branch2b', data=res5a_branch2b, use_global_stats=True,
                                             fix_gamma=False, eps=self.eps)
         scale5a_branch2b = bn5a_branch2b
@@ -648,7 +648,7 @@ class resnet_v1_101_rcnn(Symbol):
         scale5b_branch2a = bn5b_branch2a
         res5b_branch2a_relu = mx.symbol.Activation(name='res5b_branch2a_relu', data=scale5b_branch2a, act_type='relu')
         res5b_branch2b = mx.symbol.Convolution(name='res5b_branch2b', data=res5b_branch2a_relu, num_filter=512, pad=(2, 2),
-                                               kernel=(3, 3), stride=(1, 1), dilate=(2, 2), no_bias=True)
+                                               kernel=(3, 3), stride=(1, 1), dilate=(2, 2), no_bias=True, cudnn_off=True)
         bn5b_branch2b = mx.symbol.BatchNorm(name='bn5b_branch2b', data=res5b_branch2b, use_global_stats=True,
                                             fix_gamma=False, eps=self.eps)
         scale5b_branch2b = bn5b_branch2b
@@ -667,7 +667,7 @@ class resnet_v1_101_rcnn(Symbol):
         scale5c_branch2a = bn5c_branch2a
         res5c_branch2a_relu = mx.symbol.Activation(name='res5c_branch2a_relu', data=scale5c_branch2a, act_type='relu')
         res5c_branch2b = mx.symbol.Convolution(name='res5c_branch2b', data=res5c_branch2a_relu, num_filter=512, pad=(2, 2),
-                                               kernel=(3, 3), stride=(1, 1), dilate=(2, 2), no_bias=True)
+                                               kernel=(3, 3), stride=(1, 1), dilate=(2, 2), no_bias=True, cudnn_off=True)
         bn5c_branch2b = mx.symbol.BatchNorm(name='bn5c_branch2b', data=res5c_branch2b, use_global_stats=True,
                                             fix_gamma=False, eps=self.eps)
         scale5c_branch2b = bn5c_branch2b

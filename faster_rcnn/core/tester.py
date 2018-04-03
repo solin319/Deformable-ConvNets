@@ -18,6 +18,7 @@ from bbox.bbox_transform import bbox_pred, clip_boxes
 from nms.nms import py_nms_wrapper, cpu_nms_wrapper, gpu_nms_wrapper
 from utils.PrefetchingIter import PrefetchingIter
 
+import moxing.mxnet as mox
 
 class Predictor(object):
     def __init__(self, symbol, data_names, label_names,
@@ -233,8 +234,12 @@ def pred_eval(predictor, test_data, imdb, cfg, vis=False, thresh=1e-3, logger=No
         if logger:
             logger.info('testing {}/{} data {:.4f}s net {:.4f}s post {:.4f}s'.format(idx, imdb.num_images, data_time / idx * test_data.batch_size, net_time / idx * test_data.batch_size, post_time / idx * test_data.batch_size))
 
-    with open(det_file, 'wb') as f:
-        cPickle.dump(all_boxes, f, protocol=cPickle.HIGHEST_PROTOCOL)
+    # with open(det_file, 'wb') as f:
+    #     cPickle.dump(all_boxes, f, protocol=cPickle.HIGHEST_PROTOCOL)
+    ## support obs
+    data_string = cPickle.dumps(all_boxes, protocol=cPickle.HIGHEST_PROTOCOL)
+    mox.file.write(det_file, data_string)
+    ## support obs
 
     info_str = imdb.evaluate_detections(all_boxes)
     if logger:

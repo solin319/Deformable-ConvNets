@@ -13,6 +13,7 @@ import os
 import cPickle
 from mask.mask_transform import mask_overlap
 
+import moxing.mxnet as mox
 
 def parse_voc_rec(filename):
     """
@@ -21,7 +22,13 @@ def parse_voc_rec(filename):
     :return: list of dict
     """
     import xml.etree.ElementTree as ET
-    tree = ET.parse(filename)
+    # tree = ET.parse(filename)
+    ## support obs
+    tree = ET.ElementTree()
+    parser = ET.XMLParser(target=ET.TreeBuilder())
+    parser.feed(mox.file.read(filename))
+    tree._root = parser.close()
+    ## support obs
     objects = []
     for obj in tree.findall('object'):
         obj_dict = dict()
@@ -82,9 +89,12 @@ def voc_eval(detpath, annopath, imageset_file, classname, annocache, ovthresh=0.
     :param use_07_metric: whether to use voc07's 11 point ap computation
     :return: rec, prec, ap
     """
-    with open(imageset_file, 'r') as f:
-        lines = f.readlines()
-    image_filenames = [x.strip() for x in lines]
+    # with open(imageset_file, 'r') as f:
+    #     lines = f.readlines()
+    # image_filenames = [x.strip() for x in lines]
+    ## support obs
+    image_filenames = mox.file.read(imageset_file).split('\n')[0 : -1]
+    ## support obs
 
     # load annotations from cache
     if not os.path.isfile(annocache):
@@ -94,11 +104,19 @@ def voc_eval(detpath, annopath, imageset_file, classname, annocache, ovthresh=0.
             if ind % 100 == 0:
                 print 'reading annotations for {:d}/{:d}'.format(ind + 1, len(image_filenames))
         print 'saving annotations cache to {:s}'.format(annocache)
-        with open(annocache, 'wb') as f:
-            cPickle.dump(recs, f, protocol=cPickle.HIGHEST_PROTOCOL)
+        # with open(annocache, 'wb') as f:
+        #     cPickle.dump(recs, f, protocol=cPickle.HIGHEST_PROTOCOL)
+        ## support obs
+        data_string = cPickle.dumps(recs, protocol=cPickle.HIGHEST_PROTOCOL)
+        mox.file.write(annocache, data_string)
+        ## support obs
     else:
-        with open(annocache, 'rb') as f:
-            recs = cPickle.load(f)
+        # with open(annocache, 'rb') as f:
+        #     recs = cPickle.load(f)
+        ## support obs
+        data_string = mox.file.read(annocache)
+        recs = cPickle.loads(data_string)
+        ## support obs
 
     # extract objects in :param classname:
     class_recs = {}
@@ -115,10 +133,14 @@ def voc_eval(detpath, annopath, imageset_file, classname, annocache, ovthresh=0.
 
     # read detections
     detfile = detpath.format(classname)
-    with open(detfile, 'r') as f:
-        lines = f.readlines()
+    # with open(detfile, 'r') as f:
+    #     lines = f.readlines()
 
-    splitlines = [x.strip().split(' ') for x in lines]
+    # splitlines = [x.strip().split(' ') for x in lines]
+    ## support obs
+    data_buff = mox.file.read(detfile).split('\n')[0 : -1]
+    splitlines = [x.split(' ') for x in data_buff]
+    ## support obs
     image_ids = [x[0] for x in splitlines]
     confidence = np.array([float(x[1]) for x in splitlines])
     bbox = np.array([[float(z) for z in x[2:]] for x in splitlines])
