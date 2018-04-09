@@ -10,6 +10,8 @@ import yaml
 import numpy as np
 from easydict import EasyDict as edict
 
+import moxing.mxnet as mox
+
 config = edict()
 
 config.MXNET_VERSION = ''
@@ -166,7 +168,7 @@ config.TEST.test_epoch = 0
 
 def update_config(config_file):
     exp_config = None
-    with open(config_file) as f:
+    with mox.file.File(config_file, 'r') as f:
         exp_config = edict(yaml.load(f))
         for k, v in exp_config.items():
             if k in config:
